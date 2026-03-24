@@ -52,6 +52,10 @@ func main() {
 					result += num2
 				case "-":
 					result -= num2
+				case ":", "/":
+					result /= num2
+				case "*":
+					result *= num2
 				default:
 					fmt.Println("Error! Not an operator, the operators is (+, -)")
 					valid = false
