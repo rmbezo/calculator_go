@@ -2,110 +2,138 @@ package main
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
+	"math"
 	"os"
 	"strconv"
 	"strings"
-  "math"
 )
 
 func main() {
+	// User type and basic checks + Convert into slice
 	scanner := bufio.NewScanner(os.Stdin)
 
 	for {
-		fmt.Print("Type the problem: ")
+		fmt.Print("Type your problem: ")
 		if ok := scanner.Scan(); !ok {
-			fmt.Println("Exiting program.")
-			return
+			fmt.Println("Error!")
+			break
 		}
 
-		input := scanner.Text()
-		if input == "" {
-			fmt.Println("Exiting program.")
-			return
-		}
+		userText := scanner.Text()
+		userSlice := strings.Fields(userText)
 
-		array := strings.Fields(input)
-
-		// Простейшая проверка на корректность (число операндов и операторов)
-		if len(array)%2 == 0 {
-			fmt.Println("Error! Invalid expression format.")
+		if len(userSlice)%2 != 1 {
+			fmt.Println("Not a problem, error")
 			continue
 		}
 
-		// Обработка умножения и деления (высокий приоритет)
-		// Мы создаем новый слайс, куда складываем числа, уже умноженные или деленные
-		var intermediate []string
-		valid := true
+		// Check this section :
+		// fmt.Println(userText, userSlice)
 
-		for i := 0; i < len(array); i++ {
-			if i%2 == 0 {
-				// Это число, пока просто добавляем
-				intermediate = append(intermediate, array[i])
-			} else {
-				// Это оператор
-				op := array[i]
-				if op == "*" || op == "/" || op == ":" || op == "^" {
-					// Берем последнее число из результата, считаем и заменяем его
-					leftVal, _ := strconv.ParseFloat(intermediate[len(intermediate)-1], 64)
-					rightVal, err := strconv.ParseFloat(array[i+1], 64)
-					if err != nil {
-						valid = false
-						break
-					}
+		// Basic + and -
+		// fmt.Println(lOp(userSlice))
 
-					var res float64
-					if op == "*" {
-						res = leftVal * rightVal
-					} else if op == "^" {
-            res = math.Pow(leftVal, rightVal)
-          } else {
-						if rightVal == 0 {
-							fmt.Println("Error: Division by zero!")
-							valid = false
-							break
-						}
-						res = leftVal / rightVal
-					}
-					// Обновляем последнее число в промежуточном слайсе
-					intermediate[len(intermediate)-1] = fmt.Sprintf("%f", res)
-					i++ // Пропускаем следующее число, так как мы его уже использовали
-				} else {
-					// Это + или -, просто переносим в промежуточный список
-					intermediate = append(intermediate, op)
-				}
-			}
-		}
+		// Real calculator!!! So happy!!
+		value, key := hvOp(userSlice)
+		// fmt.Println("hvOp:", value, key)
+		fmt.Println(lOp(value, key))
+	}
+}
 
-		if !valid {
+// Create function to do operations with high valuable operators
+func hvOp(l []string) ([]string, error) {
+	errParseFloat := errors.New("Error parsing float!")
+	hvSlice := []string{}
+	for i := 0; i < len(l); i++ {
+		if i%2 != 1 {
+			hvSlice = append(hvSlice, l[i])
 			continue
 		}
-
-		// ШАГ 2: Обработка сложения и вычитания (низкий приоритет)
-		result, _ := strconv.ParseFloat(intermediate[0], 64)
-		for i := 1; i < len(intermediate); i += 2 {
-			op := intermediate[i]
-			num, err := strconv.ParseFloat(intermediate[i+1], 64)
+		// else if l[i] == "*" || l[i] == ":" || l[i] == "/" || l[i] == "^" {
+		// }
+		switch l[i] {
+		case "*":
+			leftN, err := strconv.ParseFloat(hvSlice[len(hvSlice)-1], 64)
 			if err != nil {
-				fmt.Println("Error parsing number!")
-				valid = false
-				break
+				return []string{"0"}, errParseFloat
 			}
-
-			switch op {
-			case "+":
-				result += num
-			case "-":
-				result -= num
-			default:
-				fmt.Println("Error! Unknown operator:", op)
-				valid = false
-				break
+			rightN, err := strconv.ParseFloat(l[i+1], 64)
+			if err != nil {
+				return []string{"0"}, errParseFloat
 			}
-		}
-
-		if valid {
-			fmt.Printf("Result: %v\n", result)
+			newNum := strconv.FormatFloat(leftN*rightN, 'f', 64, 64)
+			hvSlice[len(hvSlice)-1] = newNum
+			i++
+		case "/", ":":
+			leftN, err := strconv.ParseFloat(hvSlice[len(hvSlice)-1], 64)
+			if err != nil {
+				return []string{"0"}, errParseFloat
+			}
+			rightN, err := strconv.ParseFloat(l[i+1], 64)
+			if err != nil {
+				return []string{"0"}, errParseFloat
+			}
+			checkZero, err := strconv.ParseFloat(l[i+1], 64)
+			if err != nil {
+				return []string{"0"}, errParseFloat
+			}
+			if checkZero == 0 {
+				errZero := errors.New("Divide on zero!!!")
+				fmt.Println("Error! Cannot divide on zero!")
+				return []string{"0"}, errZero
+			}
+			newNum := strconv.FormatFloat(leftN/rightN, 'f', 64, 64)
+			// hvSlice[len(hvSlice)] = newNum
+			// hvSlice[i-1] = newNum
+			hvSlice[len(hvSlice)-1] = newNum
+			i++
+		case "^":
+			leftN, err := strconv.ParseFloat(hvSlice[len(hvSlice)-1], 64)
+			if err != nil {
+				return []string{"0"}, errParseFloat
+			}
+			rightN, err := strconv.ParseFloat(l[i+1], 64)
+			if err != nil {
+				return []string{"0"}, errParseFloat
+			}
+			newNum := strconv.FormatFloat(math.Pow(leftN, rightN), 'f', 64, 64)
+			// hvSlice[len(hvSlice)] = newNum
+			// hvSlice[i-1] = newNum
+			hvSlice[len(hvSlice)-1] = newNum
+			i++
+		case "+", "-":
+			hvSlice = append(hvSlice, l[i])
+		default:
+			errNotOp := errors.New("Not an operator!")
+			return []string{"0"}, errNotOp
 		}
 	}
+	return hvSlice, nil
+}
+
+// Function with + and -
+func lOp(l []string, e error) (float64, error) {
+	if e != nil {
+		errHvOp := errors.New("Error with high value operator function!")
+		return 0, errHvOp
+	}
+	result, _ := strconv.ParseFloat(l[0], 64)
+	for i := 1; i < len(l); i += 2 {
+		num, err := strconv.ParseFloat(l[i+1], 64)
+		if err != nil {
+			fmt.Println("Error, failed at parsing to float")
+			errParse := errors.New("Error! Not able to parse number!!")
+			return -1, errParse
+		}
+		switch l[i] {
+		case "+":
+			result += num
+		case "-":
+			result -= num
+		}
+	}
+
+	return result, nil
 }
