@@ -15,7 +15,7 @@ func main() {
 	scanner := bufio.NewScanner(os.Stdin)
 
 	for {
-		fmt.Print("Type your problem: ")
+		fmt.Print("Type your problem (Enter to exit): ")
 		if ok := scanner.Scan(); !ok {
 			fmt.Println("Error!")
 			break
@@ -25,8 +25,8 @@ func main() {
 		userSlice := strings.Fields(userText)
 
 		if len(userSlice)%2 != 1 {
-			fmt.Println("Not a problem, error")
-			continue
+			fmt.Println("Exiting.")
+			return
 		}
 
 		// Check this section :
@@ -75,11 +75,7 @@ func hvOp(l []string) ([]string, error) {
 			if err != nil {
 				return []string{"0"}, errParseFloat
 			}
-			checkZero, err := strconv.ParseFloat(l[i+1], 64)
-			if err != nil {
-				return []string{"0"}, errParseFloat
-			}
-			if checkZero == 0 {
+			if rightN == 0 {
 				errZero := errors.New("Divide on zero!!!")
 				fmt.Println("Error! Cannot divide on zero!")
 				return []string{"0"}, errZero
